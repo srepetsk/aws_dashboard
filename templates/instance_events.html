@@ -16,7 +16,7 @@
 
 <div class="row-fluid">
     <div class="span9 offset1" align="center">
-	<span class="label label-info">Instance Events</span></br>
+	<span class="label label-info">Instance List</span></br>
 	<p>
 		<table class="table table-striped">
 		<tr style="font-weight:bold">
@@ -47,8 +47,15 @@
 		</td>
 		<td>
 			<form name="BootLength" action="/instanceupdate" method="post" role="form">
-				<label>Instance:</label><input type="text" name="instance_id" required><br />
-				<label>Run Extension (hr):</label><input type="integer" name="time_extension" required>
+				<input type="hidden" name="instance_id" value="{{instance_event['instance_id']}}">
+				<input type="hidden" name="region" value="{{instance_event['instance_region']}}">
+				<!--<label>Run Extension (hr):</label><input type="integer" name="time_extension" required>-->
+				<select name="extension">
+					<option value="1">1hr</option>
+					<option value="2">2hr</option>
+					<option value="4">4hr</option>
+					<option value="8">8hr</option>
+				</select>
 				<button class="btn btn-mini btn-danger" type="submit">Go</button>
 			</form>
 		</td>

@@ -9,3 +9,7 @@ def get_ec2_conf():
 def region_list():
     region_list = ['us-east-1','us-west-1','us-west-2']
     return region_list
+
+def get_secret_key():
+        SECRET_KEY = 'YOUR RANDOMLY-GENERATED SECRET KEY'
+        return {'SECRET_KEY' : SECRET_KEY}

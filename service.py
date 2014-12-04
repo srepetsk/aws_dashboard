@@ -1,14 +1,14 @@
-from flask import Flask, flash, abort, redirect, url_for, request, render_template, make_response, json, Response
+from flask import Flask, flash, abort, redirect, url_for, request, render_template, make_response, json, Response, session
 import os, sys
 import config
 import boto.ec2.elb
 import boto
-import datetime
+from datetime import datetime, timedelta
+import time
 from boto.ec2 import *
 
 app = Flask(__name__)
-
-#url_for = ({ 'results' : "update.html", 'instance_shutdown_update' : '/' , 'instances' : '/', 'instanceupdate': 'instanceupdate'})
+app.config['SECRET_KEY'] = config.get_secret_key()
 
 @app.route('/')
 def index():
@@ -108,13 +108,7 @@ def instance_events(region=None):
 	instances = conn.get_only_instances()
 	instance_list = []
 	for instance in instances:
-		instance_info = { 'instance_id' : instance.id, 'instance_type' : instance.instance_type, 'state' : instance.state, 'instance_launch' : instance.launch_time, 'instance_name' : instance.tags['Name'] }
-		# Convert launch_time to datetime in order to make it reasonable
-		lt_datetime = datetime.datetime.strptime(instance.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')
-		lt_delta = datetime.datetime.utcnow() - lt_datetime
-		uptime = str(lt_delta)
-		instance_info.update({ 'instance_uptime' : uptime })
-		instance_info.update({ 'instance_starttime' : lt_datetime })
+		instance_info = { 'instance_id' : instance.id, 'instance_type' : instance.instance_type, 'state' : instance.state, 'instance_launch' : instance.launch_time, 'instance_name' : instance.tags['Name'], 'instance_region' : region}
 		# If the instance has a Point of Contact tag, add it now
 		if 'POC' in instance.tags :
 			instance_info.update({ 'instance_poc' : instance.tags['POC'] })
@@ -125,28 +119,53 @@ def instance_events(region=None):
 		if 'Usefor' in instance.tags :
 			instance_info.update({ 'instance_use' : instance.tags['Use']})
 		# If the instance has a shutdown time flag (time after which to shut the instance down), add it now
-		if 'Shutdown' in instance.tags :
-			instance_info.update({ 'instance_shutdown' : instance.tags['Shutdown']})
+		if 'Shutoff Time' in instance.tags :
+			aws_shutdown = int(instance.tags['Shutoff Time'])
+			shutoff_readable = datetime.fromtimestamp(aws_shutdown/1000.0)
+			instance_info.update({ 'instance_shutdown' : shutoff_readable})
 			
 		instance_list.append(instance_info)
 
 
-	return render_template('instance_events.html', instance_list=instance_list, url_for=url_for)
+	return render_template('instance_events.html', instance_list=instance_list)
 
 # Get info back regarding VM boot extension and process it
 @app.route('/instanceupdate', methods=['GET', 'POST'])
 def instanceupdate(region=None):
-	creds = config.get_ec2_conf()
-        conn = connect_to_region(region, aws_access_key_id=creds['AWS_ACCESS_KEY_ID'], aws_secret_access_key=creds['AWS_SECRET_ACCESS_KEY'])
+	if request.method == 'POST':	
+		# Set variables passed in from the session: instance ID, and extension (hours)
+		region = request.form['region']
+		form_id = request.form['instance_id']
+		extension_hr = int(request.form['extension'])
+		# Convert 
+		millisecond_hr = int(3600000 * extension_hr)
 
-	#session['instance_id'] = request.form['instance_id']
-	#print session['instance_id']
-	#session['time_extension'] = request.form['time_extension']
-	#print session['time_extension']
+		creds = config.get_ec2_conf()
+		conn = connect_to_region(region, aws_access_key_id=creds['AWS_ACCESS_KEY_ID'], aws_secret_access_key=creds['AWS_SECRET_ACCESS_KEY'])
+
+		# Get info about the instance; only the instance we want
+		instance = conn.get_only_instances(filters={'instance-id': form_id})
+		for i in instance:
+			"Extending runtime of instance " + i.id + " by " + str(extension_hr) + " hours."
+			
+			# Set new shutoff time
+			#new_shutoff_time = datetime.now() + timedelta(hours=hours)
+			current_milli_time = lambda: int(round(time.time() * 1000))
+			new_shutoff_time = current_milli_time() + millisecond_hr
+			print "New instance shutoff time for " + i.tags['Name'] + " is " + str(datetime.fromtimestamp(new_shutoff_time/1000.0))
+
+			# Determine new shutoff time
+			# lt_datetime = datetime.datetime.strptime(i.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')
+			# lt_delta = datetime.datetime.utcnow() - lt_datetime
+			# uptime = str(lt_delta)
+			i.add_tag('Shutoff Time', new_shutoff_time)
 	
-	#print "Information passed in is" + session['instance_id'] + "and" + session['time_extension']
-	
-	#return redirect(url_for('index'))
+		return redirect(url_for('index'))
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico')
+	# <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
 			
 if __name__ == '__main__':
 	app.debug = True
