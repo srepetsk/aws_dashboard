@@ -6,9 +6,9 @@ import boto
 import datetime
 from boto.ec2 import *
 
-
 app = Flask(__name__)
 
+#url_for = ({ 'results' : "update.html", 'instance_shutdown_update' : '/' , 'instances' : '/', 'instanceupdate': 'instanceupdate'})
 
 @app.route('/')
 def index():
@@ -101,7 +101,7 @@ def delete_elastic_ip(region=None,ip=None):
 	return redirect(url_for('elastic_ips', region=region))
 	
 # Display list of all instances in the selected region
-@app.route('/instance_events/<region>/', )
+@app.route('/instance_events/<region>/')
 def instance_events(region=None):
 	creds = config.get_ec2_conf()
 	conn = connect_to_region(region, aws_access_key_id=creds['AWS_ACCESS_KEY_ID'], aws_secret_access_key=creds['AWS_SECRET_ACCESS_KEY'])
@@ -129,16 +129,24 @@ def instance_events(region=None):
 			instance_info.update({ 'instance_shutdown' : instance.tags['Shutdown']})
 			
 		instance_list.append(instance_info)
-	url_for = ({ 'results' : "update.html" })
+
+
 	return render_template('instance_events.html', instance_list=instance_list, url_for=url_for)
 
 # Get info back regarding VM boot extension and process it
-@app.route('/instanceupdate.html', methods=['GET', 'POST'])
+@app.route('/instanceupdate', methods=['GET', 'POST'])
 def instanceupdate(region=None):
 	creds = config.get_ec2_conf()
         conn = connect_to_region(region, aws_access_key_id=creds['AWS_ACCESS_KEY_ID'], aws_secret_access_key=creds['AWS_SECRET_ACCESS_KEY'])
-        instances = conn.get_only_instances()
-	return render_template('instanceupdate.html', posts=posts)
+
+	#session['instance_id'] = request.form['instance_id']
+	#print session['instance_id']
+	#session['time_extension'] = request.form['time_extension']
+	#print session['time_extension']
+	
+	#print "Information passed in is" + session['instance_id'] + "and" + session['time_extension']
+	
+	#return redirect(url_for('index'))
 			
 if __name__ == '__main__':
 	app.debug = True

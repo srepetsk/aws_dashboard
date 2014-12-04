@@ -1,10 +1,7 @@
-<!doctype html>
-<html>
-<head>
+{% extends "layout.html" %}
 <link href="static/bootstrap.css" rel="stylesheet" media="screen">
-<title>AWS Dashboard</title>
-</head>
-<body>
+{% block title %}AWS Dashboard{% endblock %}
+{% block content %}
 <div class="container-fluid"><div class="navbar"><div class="navbar-inner"><div class="container"><a class="brand">Welcome to AWS Dashboard</a>
     <ul class="nav">
     <li class="divider-vertical"></li>
@@ -65,5 +62,4 @@
 	</div>
 </div>
 {% endfor %}
-</body>
-</html>
+{% endblock %}

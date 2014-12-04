@@ -1,10 +1,8 @@
-<!doctype html>
-<html>
-<head>
-<link href="../../static/bootstrap.css" rel="stylesheet" media="screen">
-<title>AWS Dashboard - Instance Events</title>
-</head>
-<body>
+{% extends "layout.html" %}
+
+{% block title %}AWS Dashboard - Instance Events{% endblock %}
+
+{% block content %}
 <div class="container-fluid"><div class="navbar"><div class="navbar-inner"><div class="container"><a class="brand">Welcome to AWS Dashboard - Instance Events</a>
     <ul class="nav">
     <li class="divider-vertical"></li>
@@ -48,14 +46,10 @@
 		{{instance_event['instance_shutdown']}}
 		</td>
 		<td>
-			<form name="BootLength" action="instanceupdate.html" method="POST" role="form">
-				<select name="BootLength" form="BootLength">
-					<option value="1">1h</option>
-					<option value="2">2h</option>
-					<option value="4">4h</option>
-					<option value="8">8h</option>
-	                        </select>
-				<button class="btn btn-mini btn-danger" type="button">Go</button>
+			<form name="BootLength" action="/instanceupdate" method="post" role="form">
+				<label>Instance:</label><input type="text" name="instance_id" required><br />
+				<label>Run Extension (hr):</label><input type="integer" name="time_extension" required>
+				<button class="btn btn-mini btn-danger" type="submit">Go</button>
 			</form>
 		</td>
 		</tr>
@@ -63,5 +57,4 @@
 		</table>
 	</div>
 </div>
-</body>
-</html>
+{% endblock %}
