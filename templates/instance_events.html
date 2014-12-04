@@ -22,24 +22,27 @@
 	<p>
 		<table class="table table-striped">
 		<tr style="font-weight:bold">
-		<td>Instance ID</td><td>Event</td><td>Description</td><td>Event Before</td><td>Event After</td>
+		<td>Name</td><td>Team</td><td>POC</td><td>Type</td><td>State</td><td>Started</td><td>Scheduled Shutdown</td>
 		</tr>
-		{% for instance_event in instance_event_list %}
+		{% for instance_event in instance_list %}
 		<tr>
 		<td>
-		{{instance_event['instance_id']}}
+		{{instance_event['instance_name']}}
 		</td>
 		<td>
-		{{instance_event['event']}}
+                {{instance_event['instance_team']}}
+                </td>
+                <td>
+                {{instance_event['instance_poc']}}
+		</td>
+                <td>
+		{{instance_event['instance_type']}}
 		</td>
 		<td>
-		{{instance_event['description']}}
+		{{instance_event['state']}}
 		</td>
 		<td>
-		{{instance_event['event_before']}}
-		</td>
-		<td>
-		{{instance_event['event_before']}}
+		{{instance_event['instance_launch']}}
 		</td>
 		</tr>
 		{% endfor %}

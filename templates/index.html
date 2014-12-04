@@ -36,6 +36,7 @@
 		</table>
 	</p>
 	</div>
+
     <div class="span4 offset1" align="center">
 	<span class="label label-info">{{dict['region']}}</span>
 	<p>
@@ -45,11 +46,7 @@
 	</tr>
 	<tr>
 	<td>
-	{% if dict['event_count'] == 0 %}
-	<button class="btn btn-mini btn-primary" type="button">{{dict['instance_count']}}</button>	
-	{% else %}
 	<a href="/instance_events/{{dict['region']}}"><button class="btn btn-mini btn-danger" type="button">{{dict['instance_count']}}</button></a>
-	{% endif %}
 	</td>
 	<td>
 	{% if dict['unattached_ebs'] == 0 %}
@@ -60,11 +57,7 @@
 	</td>
 
 	<td>
-	{% if dict['unattached_eli'] == 0 %}
-	<button class="btn btn-mini btn-primary" type="button">{{dict['eli_count']}}</button>
-	{% else %}
 	<a href="/elastic_ips/{{dict['region']}}"><button class="btn btn-mini btn-danger" type="button">{{dict['eli_count']}}</button></a>
-	{% endif %}
 	</td>
 	<td>{{dict['elb_count']}}</td>
 	</tr>

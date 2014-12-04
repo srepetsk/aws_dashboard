@@ -52,6 +52,7 @@ def index():
 		
 	return render_template('index.html',list=list)
 
+# Show all unassociated EBS volumes for a particular region
 @app.route('/ebs_volumes/<region>/')
 def ebs_volumes(region=None):
 	creds = config.get_ec2_conf()
@@ -60,9 +61,8 @@ def ebs_volumes(region=None):
 	ebs_vol = []	
 	for vol in ebs:
 		state = vol.attachment_state()
-		if state == None:
-			ebs_info = { 'id' : vol.id, 'size' : vol.size, 'iops' : vol.iops, 'status' : vol.status }
-			ebs_vol.append(ebs_info)
+		ebs_info = { 'id' : vol.id, 'size' : vol.size, 'iops' : vol.iops, 'status' : vol.status }
+		ebs_vol.append(ebs_info)
 	return render_template('ebs_volume.html',ebs_vol=ebs_vol,region=region)
 			
 @app.route('/ebs_volumes/<region>/delete/<vol_id>')
@@ -99,19 +99,21 @@ def delete_elastic_ip(region=None,ip=None):
 		eli.release()
 	return redirect(url_for('elastic_ips', region=region))
 	
-
+# Display list of all instances in the selected region
 @app.route('/instance_events/<region>/')
 def instance_events(region=None):
 	creds = config.get_ec2_conf()
 	conn = connect_to_region(region, aws_access_key_id=creds['AWS_ACCESS_KEY_ID'], aws_secret_access_key=creds['AWS_SECRET_ACCESS_KEY'])
-	instances = conn.get_all_instance_status()
-	instance_event_list = []
+	instances = conn.get_only_instances()
+	instance_list = []
 	for instance in instances:
-		event = instance.events
-		if event:
-			event_info = { 'instance_id' : instance.id, 'event' : instance.events[0].code, 'description' : instance.events[0].description, 'event_before' : instance.events[0].not_before, 'event_after': instance.events[0].not_after }
-			instance_event_list.append(event_info)
-	return render_template('instance_events.html', instance_event_list=instance_event_list)
+		instance_info = { 'instance_id' : instance.id, 'instance_type' : instance.instance_type, 'state' : instance.state, 'instance_launch' : instance.launch_time, 'instance_name' : instance.tags['Name'] }
+		if 'POC' in instance.tags :
+			instance_info.update({ 'instance_poc' : instance.tags['POC'] })
+		if 'Team' in instance.tags :
+			instance_info.update({ 'instance_team' : instance.tags['Team'] })
+		instance_list.append(instance_info)
+	return render_template('instance_events.html', instance_list=instance_list)
 			
 if __name__ == '__main__':
 	app.debug = True
