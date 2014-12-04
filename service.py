@@ -3,6 +3,7 @@ import os, sys
 import config
 import boto.ec2.elb
 import boto
+import datetime
 from boto.ec2 import *
 
 
@@ -18,7 +19,7 @@ def index():
 	for region in config.region_list():
 		conn = connect_to_region(region, aws_access_key_id=creds['AWS_ACCESS_KEY_ID'], aws_secret_access_key=creds['AWS_SECRET_ACCESS_KEY'])
 		zones = conn.get_all_zones()	
-		instances = conn.get_all_instance_status()
+		instances = conn.get_all_instance_status(max_results=2000)
 		instance_count = len(instances)
 		ebs = conn.get_all_volumes()
 		ebscount = len(ebs)
@@ -100,7 +101,7 @@ def delete_elastic_ip(region=None,ip=None):
 	return redirect(url_for('elastic_ips', region=region))
 	
 # Display list of all instances in the selected region
-@app.route('/instance_events/<region>/')
+@app.route('/instance_events/<region>/', )
 def instance_events(region=None):
 	creds = config.get_ec2_conf()
 	conn = connect_to_region(region, aws_access_key_id=creds['AWS_ACCESS_KEY_ID'], aws_secret_access_key=creds['AWS_SECRET_ACCESS_KEY'])
@@ -108,12 +109,36 @@ def instance_events(region=None):
 	instance_list = []
 	for instance in instances:
 		instance_info = { 'instance_id' : instance.id, 'instance_type' : instance.instance_type, 'state' : instance.state, 'instance_launch' : instance.launch_time, 'instance_name' : instance.tags['Name'] }
+		# Convert launch_time to datetime in order to make it reasonable
+		lt_datetime = datetime.datetime.strptime(instance.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')
+		lt_delta = datetime.datetime.utcnow() - lt_datetime
+		uptime = str(lt_delta)
+		instance_info.update({ 'instance_uptime' : uptime })
+		instance_info.update({ 'instance_starttime' : lt_datetime })
+		# If the instance has a Point of Contact tag, add it now
 		if 'POC' in instance.tags :
 			instance_info.update({ 'instance_poc' : instance.tags['POC'] })
+		# If the instance has a team tag, add it now
 		if 'Team' in instance.tags :
 			instance_info.update({ 'instance_team' : instance.tags['Team'] })
+		# If the instance has a Usefor tag (i.e. dev, production, etc.) add it now
+		if 'Usefor' in instance.tags :
+			instance_info.update({ 'instance_use' : instance.tags['Use']})
+		# If the instance has a shutdown time flag (time after which to shut the instance down), add it now
+		if 'Shutdown' in instance.tags :
+			instance_info.update({ 'instance_shutdown' : instance.tags['Shutdown']})
+			
 		instance_list.append(instance_info)
-	return render_template('instance_events.html', instance_list=instance_list)
+	url_for = ({ 'results' : "update.html" })
+	return render_template('instance_events.html', instance_list=instance_list, url_for=url_for)
+
+# Get info back regarding VM boot extension and process it
+@app.route('/instanceupdate.html', methods=['GET', 'POST'])
+def instanceupdate(region=None):
+	creds = config.get_ec2_conf()
+        conn = connect_to_region(region, aws_access_key_id=creds['AWS_ACCESS_KEY_ID'], aws_secret_access_key=creds['AWS_SECRET_ACCESS_KEY'])
+        instances = conn.get_only_instances()
+	return render_template('instanceupdate.html', posts=posts)
 			
 if __name__ == '__main__':
 	app.debug = True

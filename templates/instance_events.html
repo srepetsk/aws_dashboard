@@ -22,7 +22,7 @@
 	<p>
 		<table class="table table-striped">
 		<tr style="font-weight:bold">
-		<td>Name</td><td>Team</td><td>POC</td><td>Type</td><td>State</td><td>Started</td><td>Scheduled Shutdown</td>
+		<td>Name</td><td>Team</td><td>POC</td><td>Type</td><td>State</td><td>Started</td><td>Scheduled Shutdown</td><td>Extend Runtime</td>
 		</tr>
 		{% for instance_event in instance_list %}
 		<tr>
@@ -43,6 +43,20 @@
 		</td>
 		<td>
 		{{instance_event['instance_launch']}}
+		</td>
+		<td>
+		{{instance_event['instance_shutdown']}}
+		</td>
+		<td>
+			<form name="BootLength" action="instanceupdate.html" method="POST" role="form">
+				<select name="BootLength" form="BootLength">
+					<option value="1">1h</option>
+					<option value="2">2h</option>
+					<option value="4">4h</option>
+					<option value="8">8h</option>
+	                        </select>
+				<button class="btn btn-mini btn-danger" type="button">Go</button>
+			</form>
 		</td>
 		</tr>
 		{% endfor %}
