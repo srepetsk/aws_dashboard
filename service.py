@@ -129,6 +129,8 @@ def instance_events(region=None):
 			instance_info.update({ 'instance_use' : instance.tags['Use']})
 		else :
 			instance_info.update({ 'instance_use' : 'None' })
+		# Set readable time for when the instance was last started
+		instance_info.update({ 'instance_start_readable' : datetime.strptime(instance.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')})
 		# If the instance has a shutdown time flag (time after which to shut the instance down), add it now
 		if 'Shutoff Time' in instance.tags :
 			aws_shutdown = int(instance.tags['Shutoff Time'])
@@ -139,13 +141,18 @@ def instance_events(region=None):
 				# Shut down Dev instance if after its shutdown time
 				current_milli_time = lambda: int(round(time.time() * 1000))
 				now = current_milli_time()
-				if instance.tags['Shutoff Time'] <= now :
+				
+				# Get time from now to shutoff time
+				# If positive, shutoff is still in the future; if negative, shutoff is in the past
+				shutoff_time_from_now = int(instance.tags['Shutoff Time']) - int(now)
+				if shutoff_time_from_now < 0 and instance.state == 'running':
+					print "Evaluating " + instance.id + " for overstepping its time constraint"
 					print "Shutoff time is " + str(instance.tags['Shutoff Time']) + " and current time is " + str(now)
 					print "Going to shut " + instance.tags['Name'] + " down now."
 					print "Scheduled shutdown was " + instance.tags['Shutoff Time'] + " and it is now " + str(now)
-					conn.stop_instances(instance_ids={'instance-id' : instance.id })
+					#conn.stop_instances(instance_ids={'instance-id' : instance.id })
+					instance.stop()
 					print "Instance has been stopped"
-		instance_info.update({ 'instance_start_readable' : datetime.strptime(instance.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')})
 		
 		instance_list.append(instance_info)
 
