@@ -149,7 +149,7 @@ def instance_events(region=None):
 		
 		instance_list.append(instance_info)
 
-	return render_template('instance_events.html', instance_list=instance_list)
+	return render_template('instance_events.html', instance_list=instance_list, shutdown_type_filter=shutdown_type['SHUTDOWN_TAG_TYPE'])
 
 # Get info back regarding VM boot extension and process it
 @app.route('/instanceupdate', methods=['GET', 'POST'])
@@ -175,6 +175,9 @@ def instanceupdate(region=None):
 			current_milli_time = lambda: int(round(time.time() * 1000))
 			new_shutoff_time = current_milli_time() + millisecond_hr
 			print "New instance shutoff time for " + i.tags['Name'] + " is " + str(datetime.fromtimestamp(new_shutoff_time/1000.0))
+			# If dev instance was shutdown or previously off, start it up until the specified shutdown
+			if i.state == 'stopped' :
+				i.start()	
 
 			# lt_datetime = datetime.datetime.strptime(i.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')
 			# lt_delta = datetime.datetime.utcnow() - lt_datetime

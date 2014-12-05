@@ -42,7 +42,7 @@
 		<td>
 		{{instance_event['instance_start_readable']}}
 		</td>
-		{% if instance_event['instance_use'] == 'Dev' %}
+		{% if instance_event['instance_use'] == shutdown_type_filter %}
 		<td>
 		{{instance_event['instance_shutdown']}}
 		</td>
@@ -59,10 +59,10 @@
 					<option value="8">8hr</option>
 				</select>
 				</div>
-				<button class="btn btn-mini btn-danger" type="submit">Go</button>
+				<button class="btn btn-mini btn-danger" type="submit">Extend/Boot</button>
 			</form>
 		</td>
-		{% endif %}
+		{% endif %} 
 		</tr>
 		{% endfor %}
 		</table>
