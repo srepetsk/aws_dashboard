@@ -40,8 +40,9 @@
 		{{instance_event['state']}}
 		</td>
 		<td>
-		{{instance_event['instance_launch']}}
+		{{instance_event['instance_start_readable']}}
 		</td>
+		{% if instance_event['instance_use'] == 'Dev' %}
 		<td>
 		{{instance_event['instance_shutdown']}}
 		</td>
@@ -49,16 +50,19 @@
 			<form name="BootLength" action="/instanceupdate" method="post" role="form">
 				<input type="hidden" name="instance_id" value="{{instance_event['instance_id']}}">
 				<input type="hidden" name="region" value="{{instance_event['instance_region']}}">
-				<!--<label>Run Extension (hr):</label><input type="integer" name="time_extension" required>-->
+				<b>Run Extension (hr):</b>
+				<div class="dropdown-num">
 				<select name="extension">
 					<option value="1">1hr</option>
 					<option value="2">2hr</option>
 					<option value="4">4hr</option>
 					<option value="8">8hr</option>
 				</select>
+				</div>
 				<button class="btn btn-mini btn-danger" type="submit">Go</button>
 			</form>
 		</td>
+		{% endif %}
 		</tr>
 		{% endfor %}
 		</table>

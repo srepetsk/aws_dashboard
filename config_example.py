@@ -10,6 +10,10 @@ def region_list():
     region_list = ['us-east-1','us-west-1','us-west-2']
     return region_list
 
+def filter_instance_shutdown():
+        SHUTDOWN_TAG_TYPE = '"USE" TAG VALUE TO FILTER ON'
+        return {'SHUTDOWN_TAG_TYPE' : SHUTDOWN_TAG_TYPE }
+
 def get_secret_key():
         SECRET_KEY = 'YOUR RANDOMLY-GENERATED SECRET KEY'
         return {'SECRET_KEY' : SECRET_KEY}

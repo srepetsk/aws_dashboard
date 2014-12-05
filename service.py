@@ -104,9 +104,18 @@ def delete_elastic_ip(region=None,ip=None):
 @app.route('/instance_events/<region>/')
 def instance_events(region=None):
 	creds = config.get_ec2_conf()
+	shutdown_type = config.filter_instance_shutdown()
 	conn = connect_to_region(region, aws_access_key_id=creds['AWS_ACCESS_KEY_ID'], aws_secret_access_key=creds['AWS_SECRET_ACCESS_KEY'])
 	instances = conn.get_only_instances()
 	instance_list = []
+	# AWS holds a ton of relevant info that we might want to use
+	# For the purposes of this project, we want:
+	#	instance_id (instance id), instance_type (instance type, i.e. m3.medium), instance_state (i.e. running/stopped)
+	#	instance_launch(time(UTC) when instance was started, instance_name ('Name' tag), instance_region (AWS region)
+	#	instance_poc ('POC' Point of Contact tag), instance_team ('Team' tag for group using the instance)
+	#	instance_use ('Usefor' tag in order to filter shutdown elements on template; only going to be used for 'Dev')
+	#	instance_shutdown ('Shutoff Time' tag (in ms since epoch) for when to shutdown the instance)
+	#	instance_start_readable (Parse the start time and make it a bit more reasonable)
 	for instance in instances:
 		instance_info = { 'instance_id' : instance.id, 'instance_type' : instance.instance_type, 'state' : instance.state, 'instance_launch' : instance.launch_time, 'instance_name' : instance.tags['Name'], 'instance_region' : region}
 		# If the instance has a Point of Contact tag, add it now
@@ -116,16 +125,29 @@ def instance_events(region=None):
 		if 'Team' in instance.tags :
 			instance_info.update({ 'instance_team' : instance.tags['Team'] })
 		# If the instance has a Usefor tag (i.e. dev, production, etc.) add it now
-		if 'Usefor' in instance.tags :
+		if 'Use' in instance.tags :
 			instance_info.update({ 'instance_use' : instance.tags['Use']})
+		else :
+			instance_info.update({ 'instance_use' : 'None' })
 		# If the instance has a shutdown time flag (time after which to shut the instance down), add it now
 		if 'Shutoff Time' in instance.tags :
 			aws_shutdown = int(instance.tags['Shutoff Time'])
 			shutoff_readable = datetime.fromtimestamp(aws_shutdown/1000.0)
 			instance_info.update({ 'instance_shutdown' : shutoff_readable})
 			
+			if 'Use' in instance.tags and instance.tags['Use'] == shutdown_type['SHUTDOWN_TAG_TYPE'] :
+				# Shut down Dev instance if after its shutdown time
+				current_milli_time = lambda: int(round(time.time() * 1000))
+				now = current_milli_time()
+				if instance.tags['Shutoff Time'] <= now :
+					print "Shutoff time is " + str(instance.tags['Shutoff Time']) + " and current time is " + str(now)
+					print "Going to shut " + instance.tags['Name'] + " down now."
+					print "Scheduled shutdown was " + instance.tags['Shutoff Time'] + " and it is now " + str(now)
+					conn.stop_instances(instance_ids={'instance-id' : instance.id })
+					print "Instance has been stopped"
+		instance_info.update({ 'instance_start_readable' : datetime.strptime(instance.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')})
+		
 		instance_list.append(instance_info)
-
 
 	return render_template('instance_events.html', instance_list=instance_list)
 
@@ -154,7 +176,6 @@ def instanceupdate(region=None):
 			new_shutoff_time = current_milli_time() + millisecond_hr
 			print "New instance shutoff time for " + i.tags['Name'] + " is " + str(datetime.fromtimestamp(new_shutoff_time/1000.0))
 
-			# Determine new shutoff time
 			# lt_datetime = datetime.datetime.strptime(i.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')
 			# lt_delta = datetime.datetime.utcnow() - lt_datetime
 			# uptime = str(lt_delta)

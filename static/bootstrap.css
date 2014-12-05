@@ -5892,3 +5892,6 @@ a.badge:hover {
   position: fixed;
 }
 
+.dropdown-num select {
+	width: 80px;
+}
