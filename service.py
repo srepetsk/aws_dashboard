@@ -153,6 +153,8 @@ def instance_events(region=None):
 					#conn.stop_instances(instance_ids={'instance-id' : instance.id })
 					instance.stop()
 					print "Instance has been stopped"
+					# Remove shutdown time tag
+					instance.remove_tag('Shutoff Time')
 		
 		instance_list.append(instance_info)
 
