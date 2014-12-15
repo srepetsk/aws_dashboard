@@ -39,9 +39,15 @@
                 <td>
 		{{instance_event['instance_type']}}
 		</td>
-		<td>
-		{{instance_event['state']}}
-		</td>
+		{% if instance_event['state'] == "running" %}
+		  <td id="instance-running">
+		  {{instance_event['state']}}
+		  </td>
+		{% else %}
+		  <td id="instance-stopped">
+		  {{instance_event['state']}}
+		  </td>
+		{% endif %}
 		<td>
 		{{instance_event['instance_start_readable']}}
 		</td>

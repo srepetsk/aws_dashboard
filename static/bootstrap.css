@@ -5895,3 +5895,11 @@ a.badge:hover {
 .dropdown-num select {
 	width: 80px;
 }
+
+#instance-running {
+	color: green;
+	font-weight: bold;
+}
+#instance-stopped {
+	color: red;
+}
