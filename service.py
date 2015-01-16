@@ -131,11 +131,23 @@ def instance_events(region=None):
 			instance_info.update({ 'instance_use' : 'None' })
 		# Set readable time for when the instance was last started
 		instance_info.update({ 'instance_start_readable' : datetime.strptime(instance.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')})
+
 		# If the instance has a shutdown time flag (time after which to shut the instance down), add it now
 		if 'Shutoff Time' in instance.tags :
-			aws_shutdown = int(instance.tags['Shutoff Time'])
-			shutoff_readable = datetime.fromtimestamp(aws_shutdown/1000.0)
+			try:
+				aws_shutdown = int(instance.tags['Shutoff Time'])
+				shutoff_readable = datetime.fromtimestamp(aws_shutdown/1000.0)
+			except ValueError:
+				print "Shutdown Time is incorrect in Amazon. Setting shutdown time of instance", instance.id, " to 0."
+				shutoff_readable = "0"
+				instance.remove_tag('Shutoff Time')
+				instance.add_tag('Shutoff Time', "0")
+			except:
+				print "Unexpected error:", sys.exec_info()[0]
+				raise
+			
 			instance_info.update({ 'instance_shutdown' : shutoff_readable})
+
 			
 			if 'Use' in instance.tags and instance.tags['Use'] == shutdown_type['SHUTDOWN_TAG_TYPE'] :
 				# Shut down Dev instance if after its shutdown time
