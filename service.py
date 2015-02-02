@@ -117,7 +117,7 @@ def instance_events(region=None):
 	#	instance_shutdown ('Shutoff Time' tag (in ms since epoch) for when to shutdown the instance)
 	#	instance_start_readable (Parse the start time and make it a bit more reasonable)
 	for instance in instances:
-		instance_info = { 'instance_id' : instance.id, 'instance_type' : instance.instance_type, 'state' : instance.state, 'instance_launch' : instance.launch_time, 'instance_name' : instance.tags['Name'], 'instance_region' : region}
+		instance_info = { 'instance_id' : instance.id, 'instance_type' : instance.instance_type, 'state' : instance.state, 'instance_launch' : instance.launch_time, 'instance_name' : instance.tags['Name'], 'instance_region' : region, 'instance_ip' : instance.ip_address}
 		# If the instance has a Point of Contact tag, add it now
 		if 'POC' in instance.tags :
 			instance_info.update({ 'instance_poc' : instance.tags['POC'] })
@@ -131,6 +131,9 @@ def instance_events(region=None):
 			instance_info.update({ 'instance_use' : 'None' })
 		# Set readable time for when the instance was last started
 		instance_info.update({ 'instance_start_readable' : datetime.strptime(instance.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')})
+		# If there is no public IP, try finding a private IP instead
+		if instance.ip_address == 'None' :
+			print "No public IP for instance ",instance.id
 
 		# If the instance has a shutdown time flag (time after which to shut the instance down), add it now
 		if 'Shutoff Time' in instance.tags :
