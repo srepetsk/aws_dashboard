@@ -23,7 +23,7 @@
 	<p>
 		<table class="table table-striped">
 		<tr style="font-weight:bold">
-		<td>Name</td><td>Team</td><td>POC</td><td>Type</td><td>State</td><td>Started</td><td>Scheduled Shutdown</td><td>Extend Runtime</td>
+		<td>Name</td><td>Public IP</td><td>POC</td><td>Type</td><td>State</td><td>Started</td><td>Scheduled Shutdown</td><td>Extend Runtime</td>
 		</tr>
 		{% for instance_event in instance_list %}
 		<tr>
@@ -31,17 +31,23 @@
 		{{instance_event['instance_name']}}
 		</td>
 		<td>
-                {{instance_event['instance_team']}}
-                </td>
+		{{instance_event['instance_ip']}}
+		</td>
                 <td>
                 {{instance_event['instance_poc']}}
 		</td>
                 <td>
 		{{instance_event['instance_type']}}
 		</td>
-		<td>
-		{{instance_event['state']}}
-		</td>
+		{% if instance_event['state'] == "running" %}
+		  <td id="instance-running">
+		  {{instance_event['state']}}
+		  </td>
+		{% else %}
+		  <td id="instance-stopped">
+		  {{instance_event['state']}}
+		  </td>
+		{% endif %}
 		<td>
 		{{instance_event['instance_start_readable']}}
 		</td>

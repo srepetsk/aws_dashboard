@@ -117,7 +117,7 @@ def instance_events(region=None):
 	#	instance_shutdown ('Shutoff Time' tag (in ms since epoch) for when to shutdown the instance)
 	#	instance_start_readable (Parse the start time and make it a bit more reasonable)
 	for instance in instances:
-		instance_info = { 'instance_id' : instance.id, 'instance_type' : instance.instance_type, 'state' : instance.state, 'instance_launch' : instance.launch_time, 'instance_name' : instance.tags['Name'], 'instance_region' : region}
+		instance_info = { 'instance_id' : instance.id, 'instance_type' : instance.instance_type, 'state' : instance.state, 'instance_launch' : instance.launch_time, 'instance_name' : instance.tags['Name'], 'instance_region' : region, 'instance_ip' : instance.ip_address}
 		# If the instance has a Point of Contact tag, add it now
 		if 'POC' in instance.tags :
 			instance_info.update({ 'instance_poc' : instance.tags['POC'] })
@@ -129,23 +129,47 @@ def instance_events(region=None):
 			instance_info.update({ 'instance_use' : instance.tags['Use']})
 		else :
 			instance_info.update({ 'instance_use' : 'None' })
+		# Set readable time for when the instance was last started
+		instance_info.update({ 'instance_start_readable' : datetime.strptime(instance.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')})
+		# If there is no public IP, try finding a private IP instead
+		if instance.ip_address == 'None' :
+			print "No public IP for instance ",instance.id
+
 		# If the instance has a shutdown time flag (time after which to shut the instance down), add it now
 		if 'Shutoff Time' in instance.tags :
-			aws_shutdown = int(instance.tags['Shutoff Time'])
-			shutoff_readable = datetime.fromtimestamp(aws_shutdown/1000.0)
+			try:
+				aws_shutdown = int(instance.tags['Shutoff Time'])
+				shutoff_readable = datetime.fromtimestamp(aws_shutdown/1000.0)
+			except ValueError:
+				print "Shutdown Time is incorrect in Amazon. Setting shutdown time of instance", instance.id, " to 0."
+				shutoff_readable = "0"
+				instance.remove_tag('Shutoff Time')
+				instance.add_tag('Shutoff Time', "0")
+			except:
+				print "Unexpected error:", sys.exec_info()[0]
+				raise
+			
 			instance_info.update({ 'instance_shutdown' : shutoff_readable})
+
 			
 			if 'Use' in instance.tags and instance.tags['Use'] == shutdown_type['SHUTDOWN_TAG_TYPE'] :
 				# Shut down Dev instance if after its shutdown time
 				current_milli_time = lambda: int(round(time.time() * 1000))
 				now = current_milli_time()
-				if instance.tags['Shutoff Time'] <= now :
+				
+				# Get time from now to shutoff time
+				# If positive, shutoff is still in the future; if negative, shutoff is in the past
+				shutoff_time_from_now = int(instance.tags['Shutoff Time']) - int(now)
+				if shutoff_time_from_now < 0 and instance.state == 'running':
+					print "Evaluating " + instance.id + " for overstepping its time constraint"
 					print "Shutoff time is " + str(instance.tags['Shutoff Time']) + " and current time is " + str(now)
 					print "Going to shut " + instance.tags['Name'] + " down now."
 					print "Scheduled shutdown was " + instance.tags['Shutoff Time'] + " and it is now " + str(now)
-					conn.stop_instances(instance_ids={'instance-id' : instance.id })
+					#conn.stop_instances(instance_ids={'instance-id' : instance.id })
+					instance.stop()
 					print "Instance has been stopped"
-		instance_info.update({ 'instance_start_readable' : datetime.strptime(instance.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')})
+					# Remove shutdown time tag
+					instance.remove_tag('Shutoff Time')
 		
 		instance_list.append(instance_info)
 

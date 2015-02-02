@@ -9,3 +9,7 @@ Designed to help provide an inventory of what is set up in your AWS services. Th
 ## Configure
 
 Please refer to the wiki
+
+## What it looks like
+
+![Instance Events Page](https://github.com/srepetsk/aws_dashboard/blob/master/screenshots/instance_events.png)
